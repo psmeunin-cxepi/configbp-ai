@@ -1,2 +1,2 @@
-# configbp-ai
-# configbp-ai
+# configbp-ai 
+personal repository with code examples, findings, analysis, recommendations ...
