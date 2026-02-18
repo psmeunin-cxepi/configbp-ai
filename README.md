@@ -4,3 +4,4 @@ A personal repository for documenting code examples, research findings, technica
 ## Documents
 - [Analysis (Feb 18, 2026)](analysis-18-02.md)
 - [Intent Classification System Analysis](intent-classification-analysis.md) - Deep dive into domain and meta intent classification
+- [Worker Strategy Analysis](worker-strategy-analysis.md) - Parallel execution patterns using LangGraph's Send API
