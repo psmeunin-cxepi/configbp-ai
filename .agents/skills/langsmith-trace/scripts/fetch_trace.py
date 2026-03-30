@@ -10,7 +10,9 @@ Modes:
     messages   Conversation message sequence only
     tokens     Per-step token breakdown
     tools      Available tool definitions
-    raw        Raw JSON dump of the root run
+    raw        Raw JSON dump — for chain roots, auto-fetches direct children
+               Output: {"root": {...}, "children": [...]} for chains,
+               plain run object for non-chains
 
 Environment:
     LANGSMITH_API_KEY    API key (optional for public traces)
@@ -19,7 +21,7 @@ Environment:
 Examples:
     python3 fetch_trace.py https://langsmith.prod.usw2.plat.cxp.csco.cloud/public/abcd1234-.../r
     python3 fetch_trace.py abcd1234-... --mode messages
-    python3 fetch_trace.py https://smith.langchain.com/public/abcd1234-.../r --mode full
+    python3 fetch_trace.py https://smith.langchain.com/public/abcd1234-.../r --mode raw
 """
 import json, sys, re, urllib.request, os
 from datetime import datetime
@@ -342,6 +344,15 @@ def mode_tools(root):
 
 
 def mode_raw(root):
+    if root.get("run_type") == "chain":
+        children = []
+        for cid in root.get("direct_child_run_ids") or []:
+            try:
+                child = fetch(f"{BASE}/public/{SHARE_TOKEN}/run/{cid}")
+                children.append(child)
+            except Exception as e:
+                children.append({"id": str(cid), "fetch_error": str(e)})
+        return json.dumps({"root": root, "children": children}, indent=2, default=str)
     return json.dumps(root, indent=2, default=str)
 
 
