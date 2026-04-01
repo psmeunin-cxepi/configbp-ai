@@ -20,6 +20,49 @@
 | LLM Calls | 3 |
 | Tool Calls | 5 (across 2 tool rounds) |
 
+### Input
+
+The graph received two input messages. The `system` message carried prior conversation context (the agent had already asked the user to specify a product family), and the `human` message was the user's follow-up:
+
+**system** (conversation context):
+> Recent conversation context:
+> [user] Show deviations for a specific product family
+> [Assessments – Configuration] Understanding your request...
+> [Assessments – Configuration] Thinking about your question...
+> [Assessments – Configuration] To show deviations, I need to scope the query to a specific **product family**.
+>
+> Which **product family** should I analyze?
+> For example: `PowerEdge`, `Unity`, `Isilon`, etc.
+>
+> Once you provide it, I'll pull the deviation (violated findings) details for that product family.
+
+**human:**
+> Cat9k
+
+### Output
+
+The agent's final response to the user:
+
+> ## Asset Scope
+> **Product Family:** Cat9k
+>
+> ## Summary
+> No configuration deviations (violated findings) were returned for assets in the **Cat9k** product family in the **latest assessment set**.
+>
+> ## Findings
+> The query for findings with status **VIOLATED** returned **0 results** for this asset scope.
+>
+> ## Failed Rules
+> No failed rules were detected for Cat9k assets in the latest assessment.
+>
+> ## Severity Breakdown
+> No violated findings were returned, so there is **no severity distribution** for this scope.
+>
+> If you'd like, I can also:
+> - Show **all findings (including compliant ones)** for Cat9k
+> - Break results down **by asset/hostname**
+> - Identify **top rules evaluated** for Cat9k assets.
+
 ### Run Tree
 
 ```
