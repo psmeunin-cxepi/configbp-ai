@@ -275,32 +275,21 @@ If the system prompt included a simple rule like:
 
 ## Prompt Audit: `route_to_agent` System Prompt (Mistral-Aligned)
 
-Applying the prompt-auditor checklist against the 1,071-char system prompt:
+A full prompt audit was performed using the prompt-auditor skill against the 1,071-char system prompt. **All 5 checks failed.** 8 of 10 canonical sections are MISSING or INCOMPLETE.
 
-### Audit Results
+Key findings:
 
-| # | Check | Result | Evidence |
-|---|-------|--------|----------|
-| 1 | Structural Integrity | **FAIL** | No delimiters or sections — the prompt is a single block of prose. Agent cards and context are in the Human message with only `AVAILABLE_AGENTS:`, `RECENT_CONVERSATION_CONTEXT:`, and `USER_QUESTION:` labels (no XML tags or structured separators) |
-| 2 | Instruction Density | **FAIL** | 3 lines spent on empty/greeting handling, but zero lines on multi-turn, follow-up, disambiguation, or conversation continuity — which is the primary failure mode |
-| 3 | Ambiguity Elimination | **FAIL** | "Consider the agent descriptions, their skills, and the recent conversation context" — "consider" is undefined. No priority order, no conflict resolution rules, no weight given to conversation context vs. keyword matching |
-| 4 | Modular Layout | **FAIL** | Missing: Role (partial), Objective (partial), Scope (missing), Instructions (incomplete), Toolbox (partial — tool def exists but no usage guidance), Output Format (partial), Examples (missing), Validation Checklist (missing), Special Considerations (missing), Runtime Context (missing) |
-| 5 | Model Capability Alignment | **FAIL** | Does not leverage Mistral's native structured output (`response_format` parameter), instead uses tool-calling workaround. Agent cards should be in System message per Mistral's message hierarchy. No delimiters aligned with Mistral prompt engineering practices |
+| # | Check | Result | Top Issue |
+|---|-------|--------|-----------|
+| 1 | Structural Integrity | **FAIL** | Zero delimiters — unstructured prose, no `<<<>>>` or `####` per Mistral conventions |
+| 2 | Instruction Density | **FAIL** | 3 lines on greetings, 0 lines on follow-up detection (the actual failure mode) |
+| 3 | Ambiguity Elimination | **FAIL** | "Consider", "on-topic", "good match" — undefined subjective terms |
+| 4 | Modular Layout | **FAIL** | 8/10 canonical sections MISSING or INCOMPLETE |
+| 5 | Model Capability Alignment | **FAIL** | Manual schema enforcement instead of native `response_format`; agent cards in Human message |
 
-### Section Coverage
+The audit identified 5 critical flaws, a complete refactored prompt with a 2-turn sliding window for follow-up detection, 3 few-shot examples, and a restructured Human message.
 
-| Section | Status | Notes |
-|---------|--------|-------|
-| Role | INCOMPLETE | "You are a semantic router" — no persona depth, no expertise scope |
-| Objective | INCOMPLETE | "analyze the user's question and determine if it is on-topic" — missing multi-turn objective |
-| Scope | MISSING | No explicit scope boundaries — when should it NOT classify? |
-| Instructions | INCOMPLETE | Has basic routing rules but missing: follow-up handling, disambiguation, context priority, conflict resolution |
-| Toolbox | INCOMPLETE | Tool defined but no usage guidance in the prompt |
-| Output Format | INCOMPLETE | Schema mentioned but only as a JSON example, not enforced via native Mistral `response_format` |
-| Examples | MISSING | No few-shot examples — critical for classification tasks with Mistral |
-| Validation Checklist | MISSING | No self-check before emitting response |
-| Special Considerations | MISSING | No multi-turn handling, no "recommendation" disambiguation |
-| Runtime Context | MISSING | Previous agent/skill not injected despite being available in `recent_context_structured` |
+**Full audit details:** See [route_to_agent_v0_analysis_mistral.md](route_to_agent_v0_analysis_mistral.md) for the complete audit output including section coverage table, critical flaws with fixes, the refactored prompt, and Mistral documentation citations.
 
 ---
 
@@ -325,26 +314,17 @@ The CBP agent (Assessments – Configuration) operates correctly within its own 
 
 ### R-1: Add Multi-Turn Routing Rules to System Prompt (Critical)
 
-Add explicit follow-up handling instructions:
+Add an explicit Follow-Up Detection section evaluated **before** standard agent matching, with three heuristics:
 
-```
-## Follow-Up Detection
-Before matching the user's question to an agent, evaluate whether it is a follow-up
-to the previous conversation turn:
+1. **Entity reference** — does the query mention entities (device names, hostnames, PIDs) from recent agent responses?
+2. **Anaphoric reference** — does the query use "it", "that", "this", "the same", "those" to refer to entities in the last agent's response?
+3. **Topic continuity** — does the query ask for details, recommendations, drilldown, or next steps on the topic the last agent was handling?
 
-1. Check if the user references entities (device names, hostnames, PIDs, rule names)
-   mentioned in the previous agent response.
-2. Check if the question uses anaphoric references ("it", "that", "this device",
-   "the same") that resolve to entities in the previous response.
-3. Check if the question naturally continues the topic of the previous turn
-   (e.g., asking for details, recommendations, or drilldown on previously shown data).
+If any heuristic fires → route to the agent whose response contained the matched entity or topic.
 
-If ANY of (1), (2), or (3) is true → route to the SAME agent that handled the
-previous turn. Use the previous agent's skill that best matches the follow-up scope.
+**Entity reference scope:** For long-running, multi-agent conversations, entities may appear in responses from multiple agents. A 2-turn sliding window (check the last 2 agent responses, prefer most recent on ties) balances accuracy with bounded complexity. The window size should be tuned based on production evaluation. See [Design Decision: Entity Reference Scope](route_to_agent_v0_analysis_mistral.md#design-decision-entity-reference-scope-in-long-conversations) in the prompt audit for the full Options A/B/C analysis.
 
-Previous agent: {previous_agent_name}
-Previous skill: {previous_agent_skill}
-```
+Inject `{previous_agent_name}` and `{previous_agent_skill}` as runtime context variables from `recent_context_structured`.
 
 ### R-2: Move Agent Cards to System Prompt (High)
 
@@ -370,31 +350,19 @@ Previous skill: {agent_skill}
 {user_question}
 ```
 
-This reduces the Human message from 28K to ~3K chars, making the conversation context and user question dominant.
+This reduces the Human message from ~28K to ~10K chars (conversation history is ~8K), making the conversation context and user question dominant.
 
 ### R-3: Add Few-Shot Examples for Follow-Up Routing (High)
 
-Mistral's classification performance improves with few-shot examples. Add 2-3 examples demonstrating follow-up routing:
+Mistral's classification performance improves significantly with few-shot examples — their own docs demonstrate this as the primary technique for categorization tasks. Add 3 examples covering the critical edge cases:
 
-```
-## Examples
+1. **Follow-up with entity reference** — "can you give me recommendation for C9410R?" after CBP listed C9410R → same agent (`asset-scope-analysis`)
+2. **New topic with keyword overlap** — "I want recommendation for WS-C2960S-48TS-L" after LDOS analysis → different agent (`ask_cvi_recommendation_ai`)
+3. **Follow-up with anaphoric reference** — "which of those are the most critical?" after CBP showed 74 rule violations → same agent (`asset-scope-analysis`)
 
-Example 1:
-Previous agent: Assessments – Configuration (assessments-configuration-summary)
-Previous response mentioned: C9410R (630 violations), ISR4331 (364 violations)
-User question: "can you give me recommendation for C9410R?"
-Decision: This references C9410R from the previous response → follow-up
-→ {"is_valid": true, "agent_skill": "asset-scope-analysis"}
+These examples explicitly teach the model that "recommendation for [device]" can route to different agents depending on conversation context, and that pronouns like "those" should resolve to the last agent's response.
 
-Example 2:
-Previous agent: LDOS Analysis (ask_cvi_ldos_ai_external)
-Previous response mentioned: 45 assets past LDOS
-User question: "I want recommendation for WS-C2960S-48TS-L"
-Decision: WS-C2960S-48TS-L is a product model, user wants product replacement
-→ {"is_valid": true, "agent_skill": "ask_cvi_recommendation_ai"}
-```
-
-These examples explicitly teach the model that "recommendation for [device]" can route to different agents depending on conversation context.
+See the [Refactored Prompt](route_to_agent_v0_analysis_mistral.md#examples) in the prompt audit for the complete few-shot examples.
 
 ### R-4: Clean Up Conversation Context (Medium)
 
