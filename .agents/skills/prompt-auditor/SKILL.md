@@ -5,7 +5,7 @@ compatibility: Requires docs-openai and context7 MCP servers for dynamic initial
 allowed-tools: read search web docs-openai/* github-cxepi/* context7/*
 metadata:
   author: psmeunin
-  version: "1.1"
+  version: "0.0.7"
 ---
 
 ## How to Invoke
