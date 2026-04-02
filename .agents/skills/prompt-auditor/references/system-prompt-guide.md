@@ -76,6 +76,15 @@ The goal of this template is to ensure consistency, reliability, and maintainabi
 - **Why it matters**: Without explicit guardrails, LLMs produce non-deterministic error responses that leak internal architecture (service names, tool errors), vary wildly in length and structure, and erode user trust.
 - **Audit**: Verify content completeness — all five sub-items above are required. Mark INCOMPLETE if any are missing.
 
+### 12. Response Closure
+**Purpose**: To prevent the model from appending unsolicited follow-up suggestions, engagement hooks, or "next step" prompts after delivering the requested information.
+- **Content**:
+  - **No Follow-Up Suggestions**: The agent must not append offers of additional analysis or suggest what the user might want to see next.
+  - **No Engagement Hooks**: The agent must not use phrasing like "If you'd like, I can also show…" or "Would you like me to…" at the end of responses.
+  - **Stop After Final Data Point**: The response must end after the last data point, summary sentence, or requested output.
+- **Why it matters**: LLM models may exhibit strong alignment toward "conversational warmth" and will default to appending suggestion blocks on every response when unconstrained. This wastes 40–60 completion tokens per turn, creates noise in agentic workflows, and implies the agent is driving the conversation rather than the user.
+- **Audit**: Verify content completeness — all three sub-items above are required. Mark INCOMPLETE if any are missing.
+
 ## Usage Guidelines
 1.  **Copy the Template**: Start every new prompt by copying this structure.
 2.  **Remove Comments**: Delete the explanatory HTML comments (`<!-- ... -->`) in the final production prompt to save context window tokens.
