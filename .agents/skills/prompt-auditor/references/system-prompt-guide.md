@@ -65,6 +65,17 @@ The goal of this template is to ensure consistency, reliability, and maintainabi
 - **Security**: Each placeholder should be wrapped in dedicated XML tags to prevent prompt injection (e.g., `<user_request>...</user_request>`).
 - **Usage**: Used to inject the actual data the agent needs to process for the current turn.
 
+### 11. Error Handling (If Agentic)
+**Purpose**: To define how the agent communicates failures to the user when tool calls or backend services fail.
+- **Content**:
+  - **No Internal Leakage**: The agent must never mention internal service names, tool names, or error types to the user.
+  - **Sanitized Response**: Prescribe a brief, user-friendly message (e.g., "I'm unable to retrieve that data right now. Please try again.").
+  - **No Attempt Description**: The agent must not describe what it attempted or what failed internally.
+  - **No Structured Error Formatting**: Error responses must not use markdown headers or structured status sections.
+  - **Word Limit**: Error messages must be ≤ 30 words.
+- **Why it matters**: Without explicit guardrails, LLMs produce non-deterministic error responses that leak internal architecture (service names, tool errors), vary wildly in length and structure, and erode user trust.
+- **Audit**: Verify content completeness — all five sub-items above are required. Mark INCOMPLETE if any are missing.
+
 ## Usage Guidelines
 1.  **Copy the Template**: Start every new prompt by copying this structure.
 2.  **Remove Comments**: Delete the explanatory HTML comments (`<!-- ... -->`) in the final production prompt to save context window tokens.

@@ -55,7 +55,11 @@ Run each check against the provided prompt. Report pass/fail with specific line-
 ### 4. Modular Layout
 Audit the prompt against the canonical section list defined in the [System Prompt Guide](references/system-prompt-guide.md#template-sections). Mark each section as PRESENT / MISSING / INCOMPLETE.
 
-The 10 required sections are: Role, Objective, Scope, Instructions, Toolbox (if agentic), Output Format, Examples (recommended), Validation Checklist (recommended), Special Considerations (if applicable), Runtime Context (if dynamic).
+The 11 required sections are: Role, Objective, Scope, Instructions, Toolbox (if agentic), Output Format, Examples (recommended), Validation Checklist (recommended), Special Considerations (if applicable), Runtime Context (if dynamic), Error Handling (if agentic).
+
+For conditional sections marked "if agentic" — determine whether the prompt is for an agentic system with tool calls. Signals include: a Toolbox section, tool-calling instructions, function definitions, or MCP tool references. If the prompt does not contain clear signals, ask the user: *"Does this agent make tool calls? I need to know to evaluate agentic sections (Toolbox, Error Handling)."* Do not skip or mark N-A based on assumption alone.
+
+For sections annotated with **Audit: verify content completeness** in the guide, check that all listed sub-items are present in the prompt. Mark INCOMPLETE if the section exists but is missing required sub-items, and list which ones are absent.
 
 ### 5. Model Capability Alignment
 
@@ -108,6 +112,7 @@ Structure every audit response exactly as follows:
 | Validation Checklist | PRESENT/MISSING | |
 | Special Considerations | PRESENT/MISSING/N-A | |
 | Runtime Context | PRESENT/MISSING/N-A | |
+| Error Handling | PRESENT/MISSING/INCOMPLETE/N-A | |
 
 ## Critical Flaws
 1. [Flaw description + fix]
