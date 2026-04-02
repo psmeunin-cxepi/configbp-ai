@@ -1,0 +1,24 @@
+{
+  "_comment": "Optional MCP server configuration for the prompt-auditor skill. Merge into your VS Code user-level MCP config (~Library/Application Support/Code/User/mcp.json on macOS) or project-level .vscode/mcp.json to enable dynamic initialization (Check #5 delta layer). The skill will fall back to built-in knowledge if these servers are unavailable.",
+  "servers": {
+    "docs-openai": {
+      "description": "OpenAI developer documentation search. Used for GPT-5 audits.",
+      "type": "http",
+      "url": "https://developers.openai.com/mcp"
+    },
+    "context7": {
+      "description": "General library/framework docs. Used for Claude and Mistral audits.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "type": "stdio"
+    },
+    "docs-langchain": {
+      "description": "LangChain documentation search. Optional — used when auditing LangChain-based agent prompts.",
+      "type": "http",
+      "url": "https://docs.langchain.com/mcp"
+    }
+  }
+}

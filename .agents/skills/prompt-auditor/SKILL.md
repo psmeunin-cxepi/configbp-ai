@@ -33,7 +33,7 @@ Before auditing any prompt, fetch current best practices for the target model:
 
 **All models:**
 2. Note what has changed since your training cutoff for the target model
-3. If the MCP server is unavailable, proceed using built-in knowledge and note the limitation in your output
+3. If the MCP server is unavailable, proceed using built-in knowledge, note the limitation in your output, and inform the user: *"The `<server-name>` MCP server is not available. See [references/mcp-servers.json](references/mcp-servers.json) for setup instructions. Proceeding with built-in knowledge only."*
 
 ## Audit Checklist
 
