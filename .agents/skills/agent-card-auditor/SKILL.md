@@ -164,6 +164,8 @@ For every protocol finding:
 
 Apply the heuristics defined in `## Heuristics For High-Quality Routing`.
 
+If the task includes cross-registry ambiguity, overlap, or duplication analysis, load `references/semantic-overlap-audit.md` and apply its comparison method.
+
 After protocol checks, review whether the card is easy for an LLM router to discriminate from nearby agents.
 
 Treat these as heuristics, not schema rules.
